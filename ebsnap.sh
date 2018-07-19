@@ -5,15 +5,18 @@ msg() {
 }
 
 filters='Name=tag:group,Values=ccc'
-msg using instance filters: $filters -- very dangerous to run without filter
+[ -z "$FILTERS" ] || filters="$FILTERS"
 
 [ -n "$NO_DRY" ] || dry=--dry-run
 
+msg FILTERS=[$FILTERS] filters=[$filters] -- very dangerous to run without filter
 msg NO_DRY=[$NO_DRY] dry=[$dry] set env var NO_DRY to disable dry run
 msg FORCE_INSTANCE=[$FORCE_INSTANCE] set this env var to affect only specific instance
 msg FORCE_VOLUME=[$FORCE_VOLUME] set this env var to affect only specific volume
 msg NO_DIE=[$NO_DIE] set this env var to keep script running after errors -- helpful to fully test dry run
 msg NO_WAIT=[$NO_WAIT] set this env var to skip waiting for stopped instances -- helpful to fully test dry run
+
+[[ -z "${filters// }" ]] && { msg refusing to run with empty filters=[$filters]; exit 2; }
 
 instances=$(mktemp)
 status=$(mktemp)
