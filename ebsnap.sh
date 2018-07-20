@@ -4,6 +4,13 @@ msg() {
 	echo 1>&2 $0: $@
 }
 
+pipe_to_stderr() {
+	local i=
+	while read -r i; do
+		msg $i
+	done
+}
+
 filters='Name=tag:group,Values=ccc'
 [ -z "$FILTERS" ] || filters="$FILTERS"
 
@@ -42,7 +49,7 @@ aws ec2 describe-instances --filters "$filters" | jq -r '.Reservations[].Instanc
 num_instances=$(wc -l $instances | awk '{ print $1 }')
 msg found num_instances=$num_instances
 
-cat $instances
+cat $instances | pipe_to_stderr
 
 msg stopping num_instances=$num_instances instances
 aws ec2 stop-instances $dry --instance-ids $(cat $instances) || die could not stop instances
@@ -61,7 +68,7 @@ aws ec2 describe-instances --filters "$filters" | jq -r '.Reservations[].Instanc
 
 [ -z "$FORCE_VOLUME" ] || echo $FORCE_VOLUME > $volumes
 
-cat $volumes
+cat $volumes | pipe_to_stderr
 
 msg creating snapshots
 
