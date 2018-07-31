@@ -12,7 +12,7 @@ pipe_to_stderr() {
 }
 
 keep=2
-if [ "$KEEP" -gt 1 ]; then
+if [ -n "$KEEP" ] && [ "$KEEP" -gt 1 ]; then
 	keep=$KEEP
 else
 	msg refusing KEEP=[$KEEP] lower than 3
@@ -97,6 +97,8 @@ cat $volumes | while read i; do
 	aws ec2 describe-snapshots --filters "Name=volume-id,Values=$i" | jq -r '.Snapshots[] | .StartTime + " " + .VolumeId + " " + .SnapshotId + " " + .Description' | sort > $pervol_snapshots || die could not list snapshots for volume $i
 	count=$(wc -l $pervol_snapshots | awk '{ print $1 }')
 	delete=$(($count - $keep))
+	msg snapshots for volume $i:
+	cat $pervol_snapshots | pipe_to_stderr
 	msg vol=$i keep=$keep count=$count delete=$delete
 	if [ $delete -gt 0 ]; then
 		head -$delete $pervol_snapshots | while read s; do
