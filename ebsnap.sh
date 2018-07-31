@@ -104,7 +104,7 @@ cat $volumes | while read i; do
 		head -$delete $pervol_snapshots | while read s; do
 			snap_id=$(echo $s | awk '{ print $3 }')
 			msg delete: snap_id=$snap_id -- $s
-			aws ec2 delete-snapshot $dry --snapshot-id $snap_id
+			aws ec2 delete-snapshot $dry --snapshot-id $snap_id || die could not delete snapshot $snap_id
 		done
 	fi
 	rm $pervol_snapshots ;# remove tmp file
