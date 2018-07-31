@@ -5,7 +5,7 @@
 Run the script to get list of env vars available for customization:
 
     $ ./ebsnap.sh
-    ./ebsnap.sh: refusing KEEP=[] lower than 3
+    ./ebsnap.sh: refusing KEEP=[] lower than 2
     ./ebsnap.sh: FILTERS=[] filters=[Name=tag:group,Values=ccc] -- very dangerous to run without filter
     ./ebsnap.sh: NO_DRY=[] dry=[--dry-run] set env var NO_DRY to disable dry run
     ./ebsnap.sh: FORCE_INSTANCE=[] set this env var to affect only specific instance

@@ -15,7 +15,7 @@ keep=2
 if [ -n "$KEEP" ] && [ "$KEEP" -gt 1 ]; then
 	keep=$KEEP
 else
-	msg refusing KEEP=[$KEEP] lower than 3
+	msg refusing KEEP=[$KEEP] lower than 2
 fi
 
 filters='Name=tag:group,Values=ccc'
