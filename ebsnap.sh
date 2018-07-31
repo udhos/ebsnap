@@ -11,6 +11,13 @@ pipe_to_stderr() {
 	done
 }
 
+keep=2
+if [ "$KEEP" -gt 1 ]; then
+	keep=$KEEP
+else
+	msg refusing KEEP=[$KEEP] lower than 3
+fi
+
 filters='Name=tag:group,Values=ccc'
 [ -z "$FILTERS" ] || filters="$FILTERS"
 
@@ -22,6 +29,7 @@ msg FORCE_INSTANCE=[$FORCE_INSTANCE] set this env var to affect only specific in
 msg FORCE_VOLUME=[$FORCE_VOLUME] set this env var to affect only specific volume
 msg NO_DIE=[$NO_DIE] set this env var to keep script running after errors -- helpful to fully test dry run
 msg NO_WAIT=[$NO_WAIT] set this env var to skip waiting for stopped instances -- helpful to fully test dry run
+msg KEEP=[$KEEP] keep=[$keep] keep at most keep=$keep snapshots per volume. Delete older snapshots.
 
 [[ -z "${filters// }" ]] && { msg refusing to run with empty filters=[$filters]; exit 2; }
 
@@ -30,7 +38,7 @@ status=$(mktemp)
 volumes=$(mktemp)
 
 cleanup() {
-	rm -f "$instances" "$status" "$volumes"
+	rm -f "$instances" "$status" "$volumes" "$pervol_snapshots"
 }
 
 die() {
@@ -81,6 +89,24 @@ done
 msg restarting instances
 
 aws ec2 start-instances $dry --instance-ids $(cat $instances) || die could not start instances
+
+msg deleting old snapshots
+
+cat $volumes | while read i; do
+	pervol_snapshots=$(mktemp $i.XXXXXXXX)
+	aws ec2 describe-snapshots --filters "Name=volume-id,Values=$i" | jq -r '.Snapshots[] | .StartTime + " " + .VolumeId + " " + .SnapshotId + " " + .Description' | sort > $pervol_snapshots || die could not list snapshots for volume $i
+	count=$(wc -l $pervol_snapshots | awk '{ print $1 }')
+	delete=$(($count - $keep))
+	msg vol=$i keep=$keep count=$count delete=$delete
+	if [ $delete -gt 0 ]; then
+		head -$delete $pervol_snapshots | while read s; do
+			snap_id=$(echo $s | awk '{ print $3 }')
+			msg delete: snap_id=$snap_id -- $s
+			aws ec2 delete-snapshot $dry --snapshot-id $snap_id
+		done
+	fi
+	rm $pervol_snapshots ;# remove tmp file
+done
 
 cleanup
 
