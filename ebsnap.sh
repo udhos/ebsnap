@@ -93,7 +93,7 @@ aws ec2 start-instances $dry --instance-ids $(cat $instances) || die could not s
 msg deleting old snapshots
 
 cat $volumes | while read i; do
-	pervol_snapshots=$(mktemp $i.XXXXXXXX)
+	pervol_snapshots=$(mktemp --tmpdir $i.XXXXXXXX)
 	aws ec2 describe-snapshots --filters "Name=volume-id,Values=$i" | jq -r '.Snapshots[] | .StartTime + " " + .VolumeId + " " + .SnapshotId + " " + .Description' | sort > $pervol_snapshots || die could not list snapshots for volume $i
 	count=$(wc -l $pervol_snapshots | awk '{ print $1 }')
 	delete=$(($count - $keep))
