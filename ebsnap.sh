@@ -11,11 +11,12 @@ pipe_to_stderr() {
 	done
 }
 
-keep=2
-if [ -n "$KEEP" ] && [ "$KEEP" -gt 1 ]; then
+keep_min=2
+if [ -n "$KEEP" ] && [ "$KEEP" -ge "$keep_min" ]; then
 	keep=$KEEP
 else
-	msg refusing KEEP=[$KEEP] lower than 2
+	msg refusing KEEP=[$KEEP] lower than $keep_min
+	keep=$keep_min
 fi
 
 filters='Name=tag:group,Values=ccc'
@@ -23,13 +24,13 @@ filters='Name=tag:group,Values=ccc'
 
 [ -n "$NO_DRY" ] || dry=--dry-run
 
+msg KEEP=[$KEEP] keep=[$keep] keep at most keep=$keep snapshots per volume. Delete older snapshots.
 msg FILTERS=[$FILTERS] filters=[$filters] -- very dangerous to run without filter
 msg NO_DRY=[$NO_DRY] dry=[$dry] set env var NO_DRY to disable dry run
 msg FORCE_INSTANCE=[$FORCE_INSTANCE] set this env var to affect only specific instance
 msg FORCE_VOLUME=[$FORCE_VOLUME] set this env var to affect only specific volume
 msg NO_DIE=[$NO_DIE] set this env var to keep script running after errors -- helpful to fully test dry run
 msg NO_WAIT=[$NO_WAIT] set this env var to skip waiting for stopped instances -- helpful to fully test dry run
-msg KEEP=[$KEEP] keep=[$keep] keep at most keep=$keep snapshots per volume. Delete older snapshots.
 
 [[ -z "${filters// }" ]] && { msg refusing to run with empty filters=[$filters]; exit 2; }
 
