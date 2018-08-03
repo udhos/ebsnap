@@ -37,15 +37,32 @@ msg NO_WAIT=[$NO_WAIT] set this env var to skip waiting for stopped instances --
 instances=$(mktemp)
 status=$(mktemp)
 volumes=$(mktemp)
+instances_restart=
+
+restart() {
+	msg restarting instances
+	if [ -n "$instances_restart" ]; then
+		pipe_to_stderr < "$instances_restart"
+		if aws ec2 start-instances $dry --instance-ids $(cat "$instances_restart"); then
+			rm "$instances_restart"
+		else
+			msg could not restart instances
+		fi
+	else 
+		msg no instances to restart
+	fi
+}
 
 cleanup() {
-	rm -f "$instances" "$status" "$volumes" "$pervol_snapshots"
+	rm -f "$instances" "$status" "$volumes" "$pervol_snapshots" "$instances_restart"
 }
 
 die() {
         msg $@
 	if [ -z "$NO_DIE" ]; then
-		cleanup
+		# will die
+		restart ;# restart is required to keep VMs running
+		cleanup ;# must come after restart
         	exit 1
 	fi
 }
@@ -77,6 +94,11 @@ while [ $num_stopped -ne $num_instances ] && [ -z "$NO_WAIT" ]; do
 	sleep 2
 done
 
+# copy instance list to list of instances to restart
+instances_restart=$(mktemp)
+msg recording list of instances to restart: "$instances_restart"
+cp "$instances" "$instances_restart"
+
 msg creating snapshots
 
 cat $volumes | while read i; do
@@ -85,9 +107,7 @@ cat $volumes | while read i; do
 	aws ec2 create-snapshot $dry --volume-id $i --description "$volname backup esmarques" --tag-specifications "ResourceType=snapshot,Tags=[{Key=Name,Value=$volname},{Key=group,Value=ccc}]" || die could not create snapshot for volume $i
 done
 
-msg restarting instances
-
-aws ec2 start-instances $dry --instance-ids $(cat $instances) || die could not start instances
+restart
 
 msg deleting old snapshots
 
