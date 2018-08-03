@@ -60,6 +60,11 @@ msg found num_instances=$num_instances
 
 cat $instances | pipe_to_stderr
 
+msg discovering volumes
+aws ec2 describe-instances --filters "$filters" | jq -r '.Reservations[].Instances[].BlockDeviceMappings[].Ebs.VolumeId' > $volumes || die could not find volumes
+[ -z "$FORCE_VOLUME" ] || echo $FORCE_VOLUME > $volumes
+cat $volumes | pipe_to_stderr
+
 msg stopping num_instances=$num_instances instances
 aws ec2 stop-instances $dry --instance-ids $(cat $instances) || die could not stop instances
 
@@ -71,13 +76,6 @@ while [ $num_stopped -ne $num_instances ] && [ -z "$NO_WAIT" ]; do
 	msg $(date) num_stopped=$num_stopped num_instances=$num_instances
 	sleep 2
 done
-
-msg discovering volumes
-aws ec2 describe-instances --filters "$filters" | jq -r '.Reservations[].Instances[].BlockDeviceMappings[].Ebs.VolumeId' > $volumes || die could not find volumes
-
-[ -z "$FORCE_VOLUME" ] || echo $FORCE_VOLUME > $volumes
-
-cat $volumes | pipe_to_stderr
 
 msg creating snapshots
 
