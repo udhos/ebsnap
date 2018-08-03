@@ -14,3 +14,8 @@ Run the script to get list of env vars available for customization:
     ./ebsnap.sh: NO_WAIT=[] set this env var to skip waiting for stopped instances -- helpful to fully test dry run
     ./ebsnap.sh: KEEP=[] keep=[2] keep at most keep=2 snapshots per volume. Delete older snapshots.
 
+## Example
+
+Full test in dry mode:
+
+    $ NO_DIE=1 NO_WAIT=1 ./ebsnap.sh
