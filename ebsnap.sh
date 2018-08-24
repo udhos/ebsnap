@@ -19,7 +19,7 @@ else
 	keep=$keep_min
 fi
 
-filters='Name=tag:group,Values=ccc'
+filters='Name=tag:group,Values=ccc,devtool'
 [ -z "$FILTERS" ] || filters="$FILTERS"
 
 [ -n "$NO_DRY" ] || dry=--dry-run
